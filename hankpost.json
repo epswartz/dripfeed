@@ -1,0 +1,11 @@
+{
+    "type": "rich",
+    "version": "1.0",
+    "author_name": "Hank Green (@hankgreen.bsky.social)",
+    "author_url": "https://bsky.app/profile/hankgreen.bsky.social",
+    "provider_url": "Bluesky Social",
+    "cache_age": 86400,
+    "width": 600,
+    "height": null,
+    "html": "\u003cblockquote class=\"bluesky-embed\" data-bluesky-uri=\"at://did:plc:kqbyr4gqt6p2l57htlsa4nha/app.bsky.feed.post/3ljkwh77c5c2u\" data-bluesky-cid=\"bafyreibtmixj2ggu3jej45vxzfis3futvhxyfwwxej5x76bjz7knw7xbhu\"\u003eTEST\u003c/blockquote\u003e\u003cscript async src=\"https://embed.bsky.app/static/embed.js\" charset=\"utf-8\"\u003e\u003c/script\u003e"
+}

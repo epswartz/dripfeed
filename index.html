@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Healthy BlueSky Browser</title>
+    <link rel="stylesheet" href="post.css">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 600px;
+            margin: 50px auto;
+            text-align: center;
+            background-color: #f4f4f9;
+        }
+
+        .post-container {
+            position: relative;
+            overflow: hidden;
+            height: auto;
+        }
+
+        .post {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            margin: 20px 0;
+            box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.15);
+            text-align: left;
+            opacity: 1;
+            transition: transform 0.4s ease-in-out, opacity 0.4s ease-in-out;
+        }
+
+        .timestamp {
+            color: gray;
+            font-size: 0.9em;
+            margin-bottom: 10px;
+        }
+
+        button {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            font-size: 1rem;
+            cursor: pointer;
+            border-radius: 5px;
+            margin-top: 10px;
+        }
+
+        button:disabled {
+            background-color: #ccc;
+            cursor: not-allowed;
+        }
+
+        .swoosh {
+            transform: translateX(-100%);
+            opacity: 0;
+        }
+
+        .caught-up {
+            background: #e8f5fe;
+            border-radius: 12px;
+            padding: 20px;
+            margin: 20px 0;
+            box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.15);
+            color: #1DA1F2;
+            font-weight: bold;
+        }
+    </style>
+</head>
+
+<body>
+
+    <h1>Healthy BlueSky Browser</h1>
+    <div class="post-container" id="post-container"></div>
+    <button id="next-button">Next Post</button>
+
+    <script>
+        const fakePosts = [
+            { author: "did:plc:kqbyr4gqt6p2l57htlsa4nha", postId: "3ljkwh77c5c2u", timestamp: 1800000000000 }, // Hank Green
+            { author: "did:plc:x4qyokjtdzgl7gmqhsw4ajqj", postId: "3ljl62sfv5s26", timestamp: 1810000000000 }, // Tim Onion
+            { author: "did:plc:nvfposmpmhegtyvhbs75s3pw", postId: "3ljklpcgcn22u", timestamp: 1820000000000 } // Jamelle Bouie
+        ];
+
+        const postContainer = document.getElementById("post-container");
+        const nextButton = document.getElementById("next-button");
+
+        let lastDismissed = parseInt(localStorage.getItem("lastDismissedTimestamp") || "0", 10);
+        let currentIndex = fakePosts.findIndex(post => post.timestamp > lastDismissed);
+
+        async function getDIDFromHandle(handle) {
+            try {
+                const url = `https://public.api.bsky.app/xrpc/app.bsky.actor.getProfile?actor=${handle}`;
+                const response = await fetch(url);
+                const data = await response.json();
+                return data.did;
+            } catch (error) {
+                console.error(`Could not retrieve DID for handle: ${handle}. Error was:`, error)
+                throw new Error('Cannot retrieve DID.');
+            }
+        }
+
+        async function fetchEmbedHTML(authorDid, postId) {
+
+            // const embedUrl = `https://embed.bsky.app/oembed?url=https://bsky.app/profile/${author}/post/${postId}`;
+
+            // This HTML string contains a script tag to the script provided by bsky's oEmbed setup. That script will properly fetch the post from API and display it, replacing the blockquote with an iframe.
+            // I hacked it together from the embed response from https://embed.bsky.app.
+            // const blockquote_html = "\u003cblockquote class=\"bluesky-embed\" data-bluesky-uri=\"at://did:plc:kqbyr4gqt6p2l57htlsa4nha/app.bsky.feed.post/3ljkwh77c5c2u\" data-bluesky-cid=\"bafyreibtmixj2ggu3jej45vxzfis3futvhxyfwwxej5x76bjz7knw7xbhu\"\u003eLOADING...\u003c/blockquote\u003e\u003cscript async src=\"https://embed.bsky.app/static/embed.js\" charset=\"utf-8\"\u003e\u003c/script\u003e"
+
+            // THIS VERSION USES READABLE HANDLE
+            console.log("Fetching post:", authorDid, postId)
+            const blockquote_html = `\u003cblockquote class=\"bluesky-embed\" data-bluesky-uri=\"at://${authorDid}/app.bsky.feed.post/${postId}\" data-bluesky-cid=\"bafyreibtmixj2ggu3jej45vxzfis3futvhxyfwwxej5x76bjz7knw7xbhu\"\u003eLOADING...\u003c/blockquote\u003e\u003cscript async src=\"https://embed.bsky.app/static/embed.js\" charset=\"utf-8\"\u003e\u003c/script\u003e`
+            return blockquote_html;
+
+            try {
+                const response = await fetch(embedUrl, { mode: 'no-cors' });
+                console.log(response);
+                const data = await response.json();
+                return data.html;
+            } catch (error) {
+                console.error("Failed to fetch embed:", error);
+                return `<p style="color:red;">Failed to load post.</p>`;
+            }
+        }
+        async function displayPost(index) {
+            postContainer.innerHTML = "";
+
+            if (index >= 0 && index < fakePosts.length) {
+                const post = fakePosts[index]; const embedHTML = await
+                    fetchEmbedHTML(post.author, post.postId); const postElement = document.createElement("div");
+                postElement.classList.add("post"); postElement.id = "post"; postElement.innerHTML = ` <p class="timestamp">${new
+                    Date(post.timestamp).toLocaleString()}</p>
+        ${embedHTML}
+        `;
+
+                postContainer.appendChild(postElement);
+                nextButton.disabled = false;
+
+                // Ensure the embed script is loaded
+                const script = document.createElement("script");
+                script.src = "https://embed.bsky.app/static/embed.js";
+                script.async = true;
+                document.body.appendChild(script);
+            } else {
+                postContainer.innerHTML = `<div class="caught-up">🎉 You're all caught up! 🎉</div>`;
+                nextButton.disabled = true;
+            }
+        }
+
+        displayPost(currentIndex);
+
+        nextButton.addEventListener("click", () => {
+            const postElement = document.getElementById("post");
+            if (postElement) {
+                postElement.classList.add("swoosh");
+
+                setTimeout(() => {
+                    if (currentIndex >= 0 && currentIndex < fakePosts.length) {
+                        lastDismissed = fakePosts[currentIndex].timestamp;
+                        localStorage.setItem("lastDismissedTimestamp", lastDismissed); currentIndex++; displayPost(currentIndex);
+                    }
+                }, 400);
+            }
+        }); </script>
+
+</body>
+
+</html>
