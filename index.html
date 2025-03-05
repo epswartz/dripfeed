@@ -73,8 +73,8 @@
 
 <body>
 
-    <div class="post-container" id="post-container"></div>
     <button id="next-button">Next Post</button>
+    <div class="post-container" id="post-container"></div>
 
     <script>
 
@@ -85,22 +85,22 @@
         // let lastDismissed = parseInt(localStorage.getItem("lastDismissedTimestamp") || "0", 10);
         let lastDismissed = new Date(0);
 
-        // let posts; // TODO
-        let posts = [
-            { uri: 'at://did:plc:mpwajc42svvrwbxnuiym62vq/app.bsky.feed.post/3liztdr44o227', createdAt: 1740519716738, repost: { displayName: "Hank Green", handle: "hankgreen.bsky.social" } },
-            { uri: 'at://did:plc:kqbyr4gqt6p2l57htlsa4nha/app.bsky.feed.post/3lj2ijrsse22y', createdAt: 1740542467394 },
-            { uri: 'at://did:plc:kqbyr4gqt6p2l57htlsa4nha/app.bsky.feed.post/3lj2ijrsse22y', createdAt: 1740542467394 },
-            { uri: 'at://did:plc:kqbyr4gqt6p2l57htlsa4nha/app.bsky.feed.post/3lj3nq6bzo223', createdAt: 1740582410250 },
-            { uri: 'at://did:plc:kqbyr4gqt6p2l57htlsa4nha/app.bsky.feed.post/3lj3v2tulac2j', createdAt: 1740590284617 },
-            { uri: 'at://did:plc:kqbyr4gqt6p2l57htlsa4nha/app.bsky.feed.post/3lj3v6rwwts2j', createdAt: 1740590416820 },
-            { uri: 'at://did:plc:kqbyr4gqt6p2l57htlsa4nha/app.bsky.feed.post/3lj46oeu37c2e', createdAt: 1740600603641 },
-            { uri: 'at://did:plc:nm6alsbjlqoqjne2nk6bvkdy/app.bsky.feed.post/3lj4h47ilbk23', createdAt: 1740609657718 },
-            { uri: 'at://did:plc:kqbyr4gqt6p2l57htlsa4nha/app.bsky.feed.post/3lj4p74xeqs2d', createdAt: 1740618345649 },
-            { uri: 'at://did:plc:kqbyr4gqt6p2l57htlsa4nha/app.bsky.feed.post/3lj4pmklpzc2d', createdAt: 1740618796156 }
-        ];
+        let posts; // TODO
+        // let posts = [
+        //     { uri: 'at://did:plc:mpwajc42svvrwbxnuiym62vq/app.bsky.feed.post/3liztdr44o227', createdAt: 1740519716738, repost: { displayName: "Hank Green", handle: "hankgreen.bsky.social" } },
+        //     { uri: 'at://did:plc:kqbyr4gqt6p2l57htlsa4nha/app.bsky.feed.post/3lj2ijrsse22y', createdAt: 1740542467394 },
+        //     { uri: 'at://did:plc:kqbyr4gqt6p2l57htlsa4nha/app.bsky.feed.post/3lj2ijrsse22y', createdAt: 1740542467394 },
+        //     { uri: 'at://did:plc:kqbyr4gqt6p2l57htlsa4nha/app.bsky.feed.post/3lj3nq6bzo223', createdAt: 1740582410250 },
+        //     { uri: 'at://did:plc:kqbyr4gqt6p2l57htlsa4nha/app.bsky.feed.post/3lj3v2tulac2j', createdAt: 1740590284617 },
+        //     { uri: 'at://did:plc:kqbyr4gqt6p2l57htlsa4nha/app.bsky.feed.post/3lj3v6rwwts2j', createdAt: 1740590416820 },
+        //     { uri: 'at://did:plc:kqbyr4gqt6p2l57htlsa4nha/app.bsky.feed.post/3lj46oeu37c2e', createdAt: 1740600603641 },
+        //     { uri: 'at://did:plc:nm6alsbjlqoqjne2nk6bvkdy/app.bsky.feed.post/3lj4h47ilbk23', createdAt: 1740609657718 },
+        //     { uri: 'at://did:plc:kqbyr4gqt6p2l57htlsa4nha/app.bsky.feed.post/3lj4p74xeqs2d', createdAt: 1740618345649 },
+        //     { uri: 'at://did:plc:kqbyr4gqt6p2l57htlsa4nha/app.bsky.feed.post/3lj4pmklpzc2d', createdAt: 1740618796156 }
+        // ];
 
-        // let currentIndex; // TODO
-        let currentIndex = posts.findIndex(post => post.createdAt > lastDismissed);
+        let currentIndex; // TODO
+        // let currentIndex = posts.findIndex(post => post.createdAt > lastDismissed);
 
         async function loadPosts() {
             // Fetch posts and sort ascending.
@@ -127,12 +127,12 @@
 
         async function getPostsByAuthor(authorDid) {
             try {
+                console.log("Fetching posts.");
                 const authorFeedUrl = `https://public.api.bsky.app/xrpc/app.bsky.feed.getAuthorFeed?actor=${authorDid}`
                 const response = await fetch(authorFeedUrl);
                 const data = await response.json();
                 // TODO pagination going back to the last ack or some MAX, maybe a week back or so.
-                // Do not include replies.
-                let feed = data.feed.filter((item) => !('reply' in item));
+                let feed = data.feed.filter((item) => !('reply' in item)); // Do not include replies.
                 return data.feed.map((item) => {
                     let result = {
                         "uri": item.post.uri,
@@ -153,7 +153,7 @@
         }
 
         async function fetchEmbedHTML(postUri) {
-            return `\u003cblockquote class=\"bluesky-embed\" data-bluesky-uri=\"${postUri}\" data-bluesky-cid=\"bafyreibtmixj2ggu3jej45vxzfis3futvhxyfwwxej5x76bjz7knw7xbhu\"\u003eLOADING...\u003c/blockquote\u003e\u003cscript async src=\"https://embed.bsky.app/static/embed.js\" charset=\"utf-8\"\u003e\u003c/script\u003e`
+            return `\u003cblockquote class=\"bluesky-embed\" data-bluesky-uri=\"${postUri}\" data-bluesky-cid=\"bafyreibtmixj2ggu3jej45vxzfis3futvhxyfwwxej5x76bjz7knw7xbhu\"\u003eLOADING POST...\u003c/blockquote\u003e\u003cscript async src=\"https://embed.bsky.app/static/embed.js\" charset=\"utf-8\"\u003e\u003c/script\u003e`
         }
 
         async function displayPost(index) {
@@ -177,18 +177,17 @@
 
                 // Ensure the embed script is loaded
                 const script = document.createElement("script");
-                // TODO do I need this?
                 script.src = "https://embed.bsky.app/static/embed.js";
                 script.async = true;
                 document.body.appendChild(script);
             } else {
-                postContainer.innerHTML = `<div class="caught-up">🎉 You're all caught up! 🎉</div>`;
+                postContainer.innerHTML = `<div class="caught-up">You've reached the end of the feed. What you do now is your decision.</div>`;
                 nextButton.disabled = true;
             }
         }
 
-        // loadPosts().then(() => { displayPost(currentIndex); });
-        displayPost(currentIndex);
+        loadPosts().then(() => { displayPost(currentIndex); });
+        // displayPost(currentIndex);
 
         nextButton.addEventListener("click", () => {
             const postElement = document.getElementById("post");
