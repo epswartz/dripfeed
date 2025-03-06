@@ -297,9 +297,11 @@
         const postContainer = document.getElementById("post-container");
         const nextButton = document.getElementById("next-button");
 
-        // let lastDismissed = parseInt(localStorage.getItem("lastDismissedTimestamp") || "0", 10);
-        // TODO fix date and set it back to zero if it's in the future.
-        let lastDismissed = new Date(0);
+        let lastDismissed = parseInt(localStorage.getItem("lastDismissedTimestamp") || "0", 10);
+        if (Date(lastDismissed) - Date() > 0) {
+            lastDismissed = 0;
+        }
+
 
         let posts;
 
