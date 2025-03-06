@@ -272,6 +272,8 @@
             }
             // Reload the posts, with new follows.
             await loadPosts();
+            // TODO this currentIndex setting can be factored out into something that reloads the post list and sets your index correctly.
+            currentIndex = posts.findIndex(post => post.createdAt > lastDismissed);
         }
 
         function removeFollow(index) {
@@ -341,9 +343,10 @@
                 const authorFeedUrl = `https://public.api.bsky.app/xrpc/app.bsky.feed.getAuthorFeed?actor=${authorDid}`
                 const response = await fetch(authorFeedUrl);
                 const data = await response.json();
-                // TODO pagination going back to the last ack or some MAX, maybe a week back or so.
                 let feed = data.feed.filter((item) => !('reply' in item)); // Do not include replies.
-                return feed.map((item) => {
+
+
+                feed = feed.map((item) => {
                     let result = {
                         "uri": item.post.uri,
                         "createdAt": Date.parse(item.post.record.createdAt),
@@ -356,6 +359,16 @@
                     }
                     return result;
                 });
+
+                // TODO pagination going back to the last ack or some MAX, maybe a week back or so.
+                // Right now this doesn't page, so if they have a bunch of posts we may not even make it back a week.
+                // Maybe that's okay?
+                let oneWeekAgo = new Date();
+                oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
+
+                feed = feed.filter((item) => item.createdAt > oneWeekAgo);
+
+                return feed;
             } catch (error) {
                 console.error(`Could not retrieve posts for DID: ${authorDid}. Error was:`, error)
                 throw new Error('Cannot retrieve posts.');
