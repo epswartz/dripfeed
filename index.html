@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Healthy BlueSky Browser</title>
+    <title>DripFeed - Healthy BlueSky Browser</title>
     <link rel="stylesheet" href="post.css">
     <style>
         body {
@@ -32,7 +32,7 @@
             transition: transform 0.4s ease-in-out, opacity 0.4s ease-in-out;
         }
 
-        .timestamp {
+        .postHeader {
             color: gray;
             font-size: 0.9em;
             margin-bottom: 10px;
@@ -73,22 +73,31 @@
 
 <body>
 
-    <h1>Healthy BlueSky Browser</h1>
-    <div class="post-container" id="post-container"></div>
     <button id="next-button">Next Post</button>
+    <div class="post-container" id="post-container"></div>
 
     <script>
-        const fakePosts = [
-            { author: "did:plc:kqbyr4gqt6p2l57htlsa4nha", postId: "3ljkwh77c5c2u", timestamp: 1800000000000 }, // Hank Green
-            { author: "did:plc:x4qyokjtdzgl7gmqhsw4ajqj", postId: "3ljl62sfv5s26", timestamp: 1810000000000 }, // Tim Onion
-            { author: "did:plc:nvfposmpmhegtyvhbs75s3pw", postId: "3ljklpcgcn22u", timestamp: 1820000000000 } // Jamelle Bouie
-        ];
+
 
         const postContainer = document.getElementById("post-container");
         const nextButton = document.getElementById("next-button");
 
-        let lastDismissed = parseInt(localStorage.getItem("lastDismissedTimestamp") || "0", 10);
-        let currentIndex = fakePosts.findIndex(post => post.timestamp > lastDismissed);
+        // let lastDismissed = parseInt(localStorage.getItem("lastDismissedTimestamp") || "0", 10);
+        let lastDismissed = new Date(0);
+
+        let posts;
+
+        let currentIndex; // TODO
+
+        async function loadPosts() {
+            // Fetch posts and sort ascending.
+            const hankDid = await getDIDFromHandle("hankgreen.bsky.social")
+            let hankPosts = await getPostsByAuthor(hankDid); // For now, it's just hank.
+            hankPosts.sort((a, b) => a.createdAt - b.createdAt);
+
+            posts = hankPosts;
+            currentIndex = posts.findIndex(post => post.createdAt > lastDismissed);
+        }
 
         async function getDIDFromHandle(handle) {
             try {
@@ -102,39 +111,52 @@
             }
         }
 
-        async function fetchEmbedHTML(authorDid, postId) {
 
-            // const embedUrl = `https://embed.bsky.app/oembed?url=https://bsky.app/profile/${author}/post/${postId}`;
-
-            // This HTML string contains a script tag to the script provided by bsky's oEmbed setup. That script will properly fetch the post from API and display it, replacing the blockquote with an iframe.
-            // I hacked it together from the embed response from https://embed.bsky.app.
-            // const blockquote_html = "\u003cblockquote class=\"bluesky-embed\" data-bluesky-uri=\"at://did:plc:kqbyr4gqt6p2l57htlsa4nha/app.bsky.feed.post/3ljkwh77c5c2u\" data-bluesky-cid=\"bafyreibtmixj2ggu3jej45vxzfis3futvhxyfwwxej5x76bjz7knw7xbhu\"\u003eLOADING...\u003c/blockquote\u003e\u003cscript async src=\"https://embed.bsky.app/static/embed.js\" charset=\"utf-8\"\u003e\u003c/script\u003e"
-
-            // THIS VERSION USES READABLE HANDLE
-            console.log("Fetching post:", authorDid, postId)
-            const blockquote_html = `\u003cblockquote class=\"bluesky-embed\" data-bluesky-uri=\"at://${authorDid}/app.bsky.feed.post/${postId}\" data-bluesky-cid=\"bafyreibtmixj2ggu3jej45vxzfis3futvhxyfwwxej5x76bjz7knw7xbhu\"\u003eLOADING...\u003c/blockquote\u003e\u003cscript async src=\"https://embed.bsky.app/static/embed.js\" charset=\"utf-8\"\u003e\u003c/script\u003e`
-            return blockquote_html;
-
+        async function getPostsByAuthor(authorDid) {
             try {
-                const response = await fetch(embedUrl, { mode: 'no-cors' });
-                console.log(response);
+                const authorFeedUrl = `https://public.api.bsky.app/xrpc/app.bsky.feed.getAuthorFeed?actor=${authorDid}`
+                const response = await fetch(authorFeedUrl);
                 const data = await response.json();
-                return data.html;
+                // TODO pagination going back to the last ack or some MAX, maybe a week back or so.
+                let feed = data.feed.filter((item) => !('reply' in item)); // Do not include replies.
+                return feed.map((item) => {
+                    let result = {
+                        "uri": item.post.uri,
+                        "createdAt": Date.parse(item.post.record.createdAt),
+                    }
+                    if ("reason" in item && item.reason.$type === "app.bsky.feed.defs#reasonRepost") {
+                        result.repost = {
+                            "displayName": item.reason.by.displayName,
+                            "handle": item.reason.by.handle
+                        };
+                    }
+                    return result;
+                });
             } catch (error) {
-                console.error("Failed to fetch embed:", error);
-                return `<p style="color:red;">Failed to load post.</p>`;
+                console.error(`Could not retrieve posts for DID: ${authorDid}. Error was:`, error)
+                throw new Error('Cannot retrieve posts.');
             }
         }
+
+        async function fetchEmbedHTML(postUri) {
+            return `\u003cblockquote class=\"bluesky-embed\" data-bluesky-uri=\"${postUri}\" data-bluesky-cid=\"bafyreibtmixj2ggu3jej45vxzfis3futvhxyfwwxej5x76bjz7knw7xbhu\"\u003eLOADING POST...\u003c/blockquote\u003e\u003cscript async src=\"https://embed.bsky.app/static/embed.js\" charset=\"utf-8\"\u003e\u003c/script\u003e`
+        }
+
         async function displayPost(index) {
             postContainer.innerHTML = "";
 
-            if (index >= 0 && index < fakePosts.length) {
-                const post = fakePosts[index]; const embedHTML = await
-                    fetchEmbedHTML(post.author, post.postId); const postElement = document.createElement("div");
-                postElement.classList.add("post"); postElement.id = "post"; postElement.innerHTML = ` <p class="timestamp">${new
-                    Date(post.timestamp).toLocaleString()}</p>
-        ${embedHTML}
-        `;
+            if (index >= 0 && index < posts.length) {
+                const post = posts[index];
+                const embedHTML = await fetchEmbedHTML(post.uri);
+                const postElement = document.createElement("div");
+                postElement.classList.add("post");
+                postElement.id = "post";
+
+                let postHeaderText = "";
+                if ("repost" in post) {
+                    postHeaderText = `Reposted By ${post.repost.displayName} (@${post.repost.handle})`
+                }
+                postElement.innerHTML = ` <p class="postHeader">${postHeaderText}</p>${embedHTML}`;
 
                 postContainer.appendChild(postElement);
                 nextButton.disabled = false;
@@ -145,26 +167,31 @@
                 script.async = true;
                 document.body.appendChild(script);
             } else {
-                postContainer.innerHTML = `<div class="caught-up">🎉 You're all caught up! 🎉</div>`;
+                postContainer.innerHTML = `<div class="caught-up">You've reached the end of the feed. What you do now is your decision.</div>`;
                 nextButton.disabled = true;
             }
         }
 
-        displayPost(currentIndex);
+        loadPosts().then(() => { displayPost(currentIndex); });
+        // displayPost(currentIndex);
 
         nextButton.addEventListener("click", () => {
             const postElement = document.getElementById("post");
             if (postElement) {
+                // TODO why is this added later, does adding this immediately make it fly away?
                 postElement.classList.add("swoosh");
 
                 setTimeout(() => {
-                    if (currentIndex >= 0 && currentIndex < fakePosts.length) {
-                        lastDismissed = fakePosts[currentIndex].timestamp;
-                        localStorage.setItem("lastDismissedTimestamp", lastDismissed); currentIndex++; displayPost(currentIndex);
+                    if (currentIndex >= 0 && currentIndex < posts.length) {
+                        lastDismissed = posts[currentIndex].timestamp;
+                        localStorage.setItem("lastDismissedTimestamp", lastDismissed);
+                        currentIndex++;
+                        displayPost(currentIndex);
                     }
                 }, 400);
             }
-        }); </script>
+        });
+    </script>
 
 </body>
 
