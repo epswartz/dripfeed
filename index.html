@@ -298,7 +298,7 @@
         const nextButton = document.getElementById("next-button");
 
         let lastDismissed = parseInt(localStorage.getItem("lastDismissedTimestamp") || "0", 10);
-        if (Date(lastDismissed) - Date() > 0) {
+        if (Date(lastDismissed) > Date()) {
             lastDismissed = 0;
         }
 
