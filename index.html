@@ -298,7 +298,11 @@
         const nextButton = document.getElementById("next-button");
 
         let lastDismissed = parseInt(localStorage.getItem("lastDismissedTimestamp") || "0", 10);
-        if (Date(lastDismissed) > Date()) {
+        if (!lastDismissed) {
+            lastDismissed = 0;
+        }
+        if (new Date(lastDismissed) > new Date()) {
+            localStorage.setItem("lastDismissedTimestamp", 0);
             lastDismissed = 0;
         }
 
@@ -311,7 +315,6 @@
             // Fetch posts and sort ascending.
             fetchedPosts = [];
             for (const follow of followedAccounts) {
-                console.log(follow); // RM
                 let followPosts = await getPostsByAuthor(follow.did);
                 fetchedPosts = fetchedPosts.concat(followPosts);
             }
@@ -334,7 +337,6 @@
         }
 
         async function getPostsByAuthor(authorDid) {
-            console.log("Fetching posts for DID:", authorDid); // RM
             try {
                 const authorFeedUrl = `https://public.api.bsky.app/xrpc/app.bsky.feed.getAuthorFeed?actor=${authorDid}`
                 const response = await fetch(authorFeedUrl);
@@ -364,6 +366,7 @@
             return `\u003cblockquote class=\"bluesky-embed\" data-bluesky-uri=\"${postUri}\" data-bluesky-cid=\"bafyreibtmixj2ggu3jej45vxzfis3futvhxyfwwxej5x76bjz7knw7xbhu\"\u003eLOADING POST...\u003c/blockquote\u003e\u003cscript async src=\"https://embed.bsky.app/static/embed.js\" charset=\"utf-8\"\u003e\u003c/script\u003e`
         }
 
+        // TODO this is dumb, it should take the post object
         async function displayPost(index) {
             postContainer.innerHTML = "";
 
@@ -395,7 +398,6 @@
         }
 
 
-        console.log(followedAccounts); // RM
         loadPosts().then(() => { displayPost(currentIndex); });
         renderFollowedList();
 
@@ -407,8 +409,7 @@
 
                 setTimeout(() => {
                     if (currentIndex >= 0 && currentIndex < posts.length) {
-                        lastDismissed = posts[currentIndex].timestamp;
-                        localStorage.setItem("lastDismissedTimestamp", lastDismissed);
+                        localStorage.setItem("lastDismissedTimestamp", posts[currentIndex].createdAt);
                         currentIndex++;
                         displayPost(currentIndex);
                     }
