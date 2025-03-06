@@ -82,8 +82,7 @@
         const postContainer = document.getElementById("post-container");
         const nextButton = document.getElementById("next-button");
 
-        // let lastDismissed = parseInt(localStorage.getItem("lastDismissedTimestamp") || "0", 10);
-        let lastDismissed = new Date(0);
+        let lastDismissed = parseInt(localStorage.getItem("lastDismissedTimestamp") || "0", 10);
 
         let posts;
 
