@@ -410,6 +410,12 @@
             }
         }
 
+        window.addEventListener('keyup', function (event) {
+            if (event.target.id === 'follow-input' && event.key === 'Enter') {
+                addFollow();
+            }
+        });
+
 
         loadPosts().then(() => { displayPost(currentIndex); });
         renderFollowedList();
