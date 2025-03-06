@@ -85,22 +85,9 @@
         // let lastDismissed = parseInt(localStorage.getItem("lastDismissedTimestamp") || "0", 10);
         let lastDismissed = new Date(0);
 
-        let posts; // TODO
-        // let posts = [
-        //     { uri: 'at://did:plc:mpwajc42svvrwbxnuiym62vq/app.bsky.feed.post/3liztdr44o227', createdAt: 1740519716738, repost: { displayName: "Hank Green", handle: "hankgreen.bsky.social" } },
-        //     { uri: 'at://did:plc:kqbyr4gqt6p2l57htlsa4nha/app.bsky.feed.post/3lj2ijrsse22y', createdAt: 1740542467394 },
-        //     { uri: 'at://did:plc:kqbyr4gqt6p2l57htlsa4nha/app.bsky.feed.post/3lj2ijrsse22y', createdAt: 1740542467394 },
-        //     { uri: 'at://did:plc:kqbyr4gqt6p2l57htlsa4nha/app.bsky.feed.post/3lj3nq6bzo223', createdAt: 1740582410250 },
-        //     { uri: 'at://did:plc:kqbyr4gqt6p2l57htlsa4nha/app.bsky.feed.post/3lj3v2tulac2j', createdAt: 1740590284617 },
-        //     { uri: 'at://did:plc:kqbyr4gqt6p2l57htlsa4nha/app.bsky.feed.post/3lj3v6rwwts2j', createdAt: 1740590416820 },
-        //     { uri: 'at://did:plc:kqbyr4gqt6p2l57htlsa4nha/app.bsky.feed.post/3lj46oeu37c2e', createdAt: 1740600603641 },
-        //     { uri: 'at://did:plc:nm6alsbjlqoqjne2nk6bvkdy/app.bsky.feed.post/3lj4h47ilbk23', createdAt: 1740609657718 },
-        //     { uri: 'at://did:plc:kqbyr4gqt6p2l57htlsa4nha/app.bsky.feed.post/3lj4p74xeqs2d', createdAt: 1740618345649 },
-        //     { uri: 'at://did:plc:kqbyr4gqt6p2l57htlsa4nha/app.bsky.feed.post/3lj4pmklpzc2d', createdAt: 1740618796156 }
-        // ];
+        let posts;
 
         let currentIndex; // TODO
-        // let currentIndex = posts.findIndex(post => post.createdAt > lastDismissed);
 
         async function loadPosts() {
             // Fetch posts and sort ascending.
@@ -127,18 +114,17 @@
 
         async function getPostsByAuthor(authorDid) {
             try {
-                console.log("Fetching posts.");
                 const authorFeedUrl = `https://public.api.bsky.app/xrpc/app.bsky.feed.getAuthorFeed?actor=${authorDid}`
                 const response = await fetch(authorFeedUrl);
                 const data = await response.json();
                 // TODO pagination going back to the last ack or some MAX, maybe a week back or so.
                 let feed = data.feed.filter((item) => !('reply' in item)); // Do not include replies.
-                return data.feed.map((item) => {
+                return feed.map((item) => {
                     let result = {
                         "uri": item.post.uri,
                         "createdAt": Date.parse(item.post.record.createdAt),
                     }
-                    if ("reason" in item && item.reason === "app.bsky.feed.defs#reasonRepost") {
+                    if ("reason" in item && item.reason.$type === "app.bsky.feed.defs#reasonRepost") {
                         result.repost = {
                             "displayName": item.reason.by.displayName,
                             "handle": item.reason.by.handle
