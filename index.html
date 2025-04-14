@@ -364,7 +364,7 @@
                 // Right now this doesn't page, so if they have a bunch of posts we may not even make it back a week.
                 // Maybe that's okay?
                 let oneWeekAgo = new Date();
-                oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
+                oneWeekAgo.setDate(oneWeekAgo.getDate() - 3);
 
                 feed = feed.filter((item) => item.createdAt > oneWeekAgo);
 
