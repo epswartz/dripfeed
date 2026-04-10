@@ -226,29 +226,50 @@ function goToNextPost() {
 
 nextButton.addEventListener("click", goToNextPost);
 
-// Keyboard support
+// Navigation support (Scroll to bottom for next)
+let isTransitioning = false;
+
+window.addEventListener('wheel', (e) => {
+    if (isTransitioning) return;
+
+    // Check if user is at the bottom and scrolling down
+    if (window.innerHeight + window.scrollY >= document.body.offsetHeight - 2) {
+        if (e.deltaY > 50) { // Significant scroll down attempt
+            triggerNext();
+        }
+    }
+}, { passive: true });
+
 window.addEventListener('keydown', function (event) {
     if (event.key === 'ArrowDown') {
         goToNextPost();
     }
 });
 
-// Swipe support
+// Touch support for "swipe up at bottom"
 let touchStartY = 0;
-let touchEndY = 0;
-
 window.addEventListener('touchstart', e => {
     touchStartY = e.changedTouches[0].screenY;
-}, false);
+}, { passive: true });
 
 window.addEventListener('touchend', e => {
-    touchEndY = e.changedTouches[0].screenY;
-    handleGesture();
-}, false);
+    if (isTransitioning) return;
 
-function handleGesture() {
-    if (touchStartY - touchEndY > 50) {
-        // Swiped Up
-        goToNextPost();
+    const touchEndY = e.changedTouches[0].screenY;
+    const isAtBottom = window.innerHeight + window.scrollY >= document.body.offsetHeight - 2;
+
+    if (isAtBottom && (touchStartY - touchEndY > 100)) {
+        triggerNext();
     }
+}, { passive: true });
+
+function triggerNext() {
+    isTransitioning = true;
+    goToNextPost();
+    // Reset transition flag after the animation completes
+    // TODO I don't love this, could be better if we explicitly ended this
+    // when the transition was done.
+    setTimeout(() => {
+        isTransitioning = false;
+    }, 500);
 }
