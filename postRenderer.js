@@ -68,25 +68,25 @@ function renderTextWithFacets(text, facets) {
 
     // Sort facets by start index
     const sortedFacets = [...facets].sort((a, b) => a.index.byteStart - b.index.byteStart);
-    
+
     // We need to work with UTF-8 byte offsets
     const encoder = new TextEncoder();
     const decoder = new TextDecoder();
     const bytes = encoder.encode(text);
-    
+
     let result = "";
     let lastOffset = 0;
 
     for (const facet of sortedFacets) {
         const { byteStart, byteEnd } = facet.index;
-        
+
         // Add text before the facet
         result += escapeHtml(decoder.decode(bytes.slice(lastOffset, byteStart)));
-        
+
         // Add the facet itself
         const facetText = decoder.decode(bytes.slice(byteStart, byteEnd));
         const feature = facet.features[0]; // Usually one feature per facet
-        
+
         if (feature.$type === "app.bsky.richtext.facet#link") {
             result += `<a href="${feature.uri}" target="_blank">${escapeHtml(facetText)}</a>`;
         } else if (feature.$type === "app.bsky.richtext.facet#mention") {
@@ -96,10 +96,10 @@ function renderTextWithFacets(text, facets) {
         } else {
             result += escapeHtml(facetText);
         }
-        
+
         lastOffset = byteEnd;
     }
-    
+
     // Add remaining text
     result += escapeHtml(decoder.decode(bytes.slice(lastOffset)));
     return result;
