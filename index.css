@@ -46,7 +46,12 @@ button:disabled {
 }
 
 .swoosh {
-    transform: translateX(-100%);
+    transform: translateY(-100%);
+    opacity: 0;
+}
+
+.post-enter {
+    transform: translateY(100%);
     opacity: 0;
 }
 
@@ -185,4 +190,32 @@ button:disabled {
     border-radius: 5px;
     margin-left: 5px;
     font-size: 20px;
+}
+
+/* Desktop Next Button */
+.next-button {
+    position: fixed;
+    top: 15px;
+    left: 50%;
+    transform: translateX(-50%);
+    background-color: #007bff;
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    font-size: 1.1rem;
+    cursor: pointer;
+    border-radius: 8px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    z-index: 100;
+}
+
+.next-button:hover {
+    background-color: #0056b3;
+}
+
+/* Hide button on touch devices as they use swiping */
+@media (hover: none) and (pointer: coarse) {
+    .next-button {
+        display: none;
+    }
 }

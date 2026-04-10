@@ -167,6 +167,7 @@ async function displayPost(index) {
         const embedHTML = await fetchEmbedHTML(post.uri);
         const postElement = document.createElement("div");
         postElement.classList.add("post");
+        postElement.classList.add("post-enter");
         postElement.id = "post";
 
         let postHeaderText = "";
@@ -176,8 +177,11 @@ async function displayPost(index) {
         postElement.innerHTML = ` <p class="postHeader">${postHeaderText}</p>${embedHTML}`;
 
         postContainer.appendChild(postElement);
-        nextButton.disabled = false;
 
+        // Trigger entrance animation
+        requestAnimationFrame(() => {
+            postElement.classList.remove("post-enter");
+        });
         // Ensure the embed script is loaded
         const script = document.createElement("script");
         script.src = "https://embed.bsky.app/static/embed.js";
@@ -185,7 +189,6 @@ async function displayPost(index) {
         document.body.appendChild(script);
     } else {
         postContainer.innerHTML = `<div class="caught-up">You've reached the end of the feed. What you do now is your decision.</div>`;
-        nextButton.disabled = true;
     }
 }
 
@@ -201,10 +204,9 @@ loadPosts().then(() => {
 });
 renderFollowedList();
 
-nextButton.addEventListener("click", () => {
+function goToNextPost() {
     const postElement = document.getElementById("post");
     if (postElement) {
-        // TODO why is this added later, does adding this immediately make it fly away?
         postElement.classList.add("swoosh");
 
         setTimeout(() => {
@@ -214,5 +216,39 @@ nextButton.addEventListener("click", () => {
                 displayPost(currentIndex);
             }
         }, 400);
+    } else if (currentIndex >= posts.length) {
+        // Already at the end, do nothing or show message
+    } else {
+        // If there's no post element (e.g. caught up), but we somehow trigger next
+        displayPost(currentIndex);
+    }
+}
+
+nextButton.addEventListener("click", goToNextPost);
+
+// Keyboard support
+window.addEventListener('keydown', function (event) {
+    if (event.key === 'ArrowDown') {
+        goToNextPost();
     }
 });
+
+// Swipe support
+let touchStartY = 0;
+let touchEndY = 0;
+
+window.addEventListener('touchstart', e => {
+    touchStartY = e.changedTouches[0].screenY;
+}, false);
+
+window.addEventListener('touchend', e => {
+    touchEndY = e.changedTouches[0].screenY;
+    handleGesture();
+}, false);
+
+function handleGesture() {
+    if (touchStartY - touchEndY > 50) {
+        // Swiped Up
+        goToNextPost();
+    }
+}
