@@ -246,19 +246,19 @@ window.addEventListener('keydown', function (event) {
     }
 });
 
-// Touch support for "swipe up at bottom"
-let touchStartY = 0;
+// Touch support for "swipe left"
+let touchStartX = 0;
 window.addEventListener('touchstart', e => {
-    touchStartY = e.changedTouches[0].screenY;
+    touchStartX = e.changedTouches[0].screenX;
 }, { passive: true });
 
 window.addEventListener('touchend', e => {
     if (isTransitioning) return;
 
-    const touchEndY = e.changedTouches[0].screenY;
-    const isAtBottom = window.innerHeight + window.scrollY >= document.body.offsetHeight - 2;
-
-    if (isAtBottom && (touchStartY - touchEndY > 100)) {
+    const touchEndX = e.changedTouches[0].screenX;
+    
+    // Horizontal swipe left (finger moves left)
+    if (touchStartX - touchEndX > 70) {
         triggerNext();
     }
 }, { passive: true });
