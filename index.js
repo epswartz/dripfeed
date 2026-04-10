@@ -126,18 +126,19 @@ async function getPostsByAuthor(authorDid) {
 
 
         feed = feed.map((item) => {
-                    let result = {
-                        ...item.post,
-                        "createdAt": Date.parse(item.post.record.createdAt),
-                    }
-                    if ("reason" in item && item.reason.$type === "app.bsky.feed.defs#reasonRepost") {
-                        result.repostBy = {
-                            "displayName": item.reason.by.displayName,
-                            "handle": item.reason.by.handle
-                        };
-                    }
-                    return result;
-                });
+            let result = {
+                "uri": item.post.uri,
+                "createdAt": Date.parse(item.post.record.createdAt),
+            }
+            if ("reason" in item && item.reason.$type === "app.bsky.feed.defs#reasonRepost") {
+                result.repost = {
+                    "displayName": item.reason.by.displayName,
+                    "handle": item.reason.by.handle
+                };
+            }
+            return result;
+        });
+
         // TODO pagination going back to the last ack or some MAX, maybe a week back or so.
         // Right now this doesn't page, so if they have a bunch of posts we may not even make it back a week.
         // Maybe that's okay?
@@ -153,27 +154,39 @@ async function getPostsByAuthor(authorDid) {
     }
 }
 
+async function fetchEmbedHTML(postUri) {
+    return `\u003cblockquote class=\"bluesky-embed\" data-bluesky-uri=\"${postUri}\" data-bluesky-cid=\"bafyreibtmixj2ggu3jej45vxzfis3futvhxyfwwxej5x76bjz7knw7xbhu\"\u003eLOADING POST...\u003c/blockquote\u003e\u003cscript async src=\"https://embed.bsky.app/static/embed.js\" charset=\"utf-8\"\u003e\u003c/script\u003e`
+}
+
+// TODO this is dumb, it should take the post object
 async function displayPost(index) {
     postContainer.innerHTML = "";
 
     if (index >= 0 && index < posts.length) {
         const post = posts[index];
+        const embedHTML = await fetchEmbedHTML(post.uri);
         const postElement = document.createElement("div");
         postElement.classList.add("post");
         postElement.classList.add("post-enter");
         postElement.id = "post";
 
-        postElement.innerHTML = renderNativePost(post);
+        let postHeaderText = "";
+        if ("repost" in post) {
+            postHeaderText = `Reposted By ${post.repost.displayName} (@${post.repost.handle})`
+        }
+        postElement.innerHTML = ` <p class="postHeader">${postHeaderText}</p>${embedHTML}`;
 
         postContainer.appendChild(postElement);
-
-        // Initialize videos and other enhancements
-        initPostEnhancements();
 
         // Trigger entrance animation
         requestAnimationFrame(() => {
             postElement.classList.remove("post-enter");
         });
+        // Ensure the embed script is loaded
+        const script = document.createElement("script");
+        script.src = "https://embed.bsky.app/static/embed.js";
+        script.async = true;
+        document.body.appendChild(script);
     } else {
         postContainer.innerHTML = `<div class="caught-up">You've reached the end of the feed. What you do now is your decision.</div>`;
     }
@@ -233,19 +246,19 @@ window.addEventListener('keydown', function (event) {
     }
 });
 
-// Touch support for "swipe left"
-let touchStartX = 0;
+// Touch support for "swipe up at bottom"
+let touchStartY = 0;
 window.addEventListener('touchstart', e => {
-    touchStartX = e.changedTouches[0].screenX;
+    touchStartY = e.changedTouches[0].screenY;
 }, { passive: true });
 
 window.addEventListener('touchend', e => {
     if (isTransitioning) return;
 
-    const touchEndX = e.changedTouches[0].screenX;
+    const touchEndY = e.changedTouches[0].screenY;
+    const isAtBottom = window.innerHeight + window.scrollY >= document.body.offsetHeight - 2;
 
-    // Horizontal swipe left (finger moves left)
-    if (touchStartX - touchEndX > 70) {
+    if (isAtBottom && (touchStartY - touchEndY > 100)) {
         triggerNext();
     }
 }, { passive: true });
